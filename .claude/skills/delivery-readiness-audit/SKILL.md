@@ -1,7 +1,8 @@
 ---
 name: delivery-readiness-audit
 description: >
-  The terminal skill of every vibecoding sprint. A binary READY/INCOMPLETE
+  The terminal skill of every vibecoding sprint. A three-way READY /
+  CODE-COMPLETE-RUNTIME-UNVERIFIED / INCOMPLETE
   audit that decides whether the deliverable is really done or only "70%
   claimed done". 18-item Definition of Done checklist, mechanical scan for
   TODO/skip/console.log, delta between plan and delivered, smoke test
@@ -10,15 +11,15 @@ description: >
   "audit before merging", "delivery check". Mandatory downstream of
   `vibecoding-engineer`: the prompt sequence closes only if this audit says
   READY.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
 
 # Delivery Readiness Audit
 
-> The canonical skill for not claiming "done" at 70%. A binary audit: either the deliverable is READY (shippable) or it is INCOMPLETE (work in progress, no done claim). No grey area.
+> The canonical skill for not claiming "done" at 70%. The deliverable is READY (shippable, with an observed runtime), CODE-COMPLETE with the runtime unverified (honest, and it names who verifies it), or INCOMPLETE (work in progress, no done claim). No grey area.
 
 ## Origin
 
@@ -87,10 +88,35 @@ A four-column table:
 
 Every gap needs an explicit reason (a conscious decision, a deliberate scope cut, or a blocker). "Forgot about it" is not one of them.
 
-### 4. Verdict
+### 4. Verdict (three outcomes, not two)
 
-- **READY**: DoD 18/18 green, mechanical scan with zero failures, the delta table has zero gaps OR every gap carries a stated and acceptable reason, Self-Score >= 9/10, Adversarial Review answered.
-- **INCOMPLETE**: anything else. Reformulate as work in progress. NO done claim.
+The binary READY/INCOMPLETE verdict of v0.1 had a hole: it did not distinguish between "the code is incomplete" and "the code is complete but nobody has watched the system actually run". That second case got flattened onto READY, and it is the most common way a green deliverable turns into an incident. As of v0.2 there are three outcomes.
+
+- **READY**: DoD green, mechanical scan with zero failures, every gap in the delta table backed by an acceptable reason, **plus a runtime observation of the real system with real data**. The release vocabulary (`production-ready`, `works end-to-end`, `live`, `shipped to users`) is legal only here.
+- **CODE-COMPLETE, RUNTIME-UNVERIFIED**: everything else is green but the audit could not run the real system (third-party managed platform, browser-gated environment, credentials you do not have). This is an HONEST and legitimate outcome, not a failing grade, but it requires a tracked handoff and it forbids the release vocabulary.
+- **INCOMPLETE**: anything else. Reframe it as work in progress. No done claim.
+
+#### Block required for READY
+
+```markdown
+## Runtime observation
+surface: <route or component>
+data: real
+observed: <the REAL value or decision seen on screen, never "rendered", never "no crash">
+verified_at: <deployed, non-local URL>
+```
+
+#### Block required for CODE-COMPLETE, RUNTIME-UNVERIFIED
+
+```markdown
+## Runtime handoff
+cannot-run: <why, concretely>
+owner: <who can run it>
+to-verify: <the exact clicks to perform and the real value expected>
+tracker: <link or id>
+```
+
+The rule that closes the hole: **a "pending, we will verify it later" cannot coexist with a READY verdict**. If a runtime check is left hanging, the verdict drops to CODE-COMPLETE, RUNTIME-UNVERIFIED, which in turn forces the handoff. A pending in a footnote is exactly the mechanism by which verification gets deferred forever.
 
 ## Skill chains
 
@@ -104,8 +130,10 @@ Every gap needs an explicit reason (a conscious decision, a deliberate scope cut
 - [ ] All 18 DoD items answered explicitly YES/NO
 - [ ] Mechanical scan run, zero failures
 - [ ] Delta between plan and delivered filled in as a four-column table
-- [ ] Binary verdict declared (READY or INCOMPLETE, no grey areas)
-- [ ] If READY, smoke test output attached
+- [ ] Verdict declared as one of the three outcomes, no grey areas
+- [ ] If READY, the `## Runtime observation` block filled in with a real observed value
+- [ ] If CODE-COMPLETE RUNTIME-UNVERIFIED, the `## Runtime handoff` block complete with owner and checklist
+- [ ] No release claim in a deliverable that is not READY
 - [ ] If INCOMPLETE, an actionable list of what to fix
 
 ## Fallback
@@ -113,6 +141,7 @@ Every gap needs an explicit reason (a conscious decision, a deliberate scope cut
 - No DoD checklist available: use the 18-item default above
 - Mechanical scan fails: automatic INCOMPLETE, no override
 - No engineering brief exists: flag "audit-without-baseline" and add the caveat to the output
+- The audit cannot run the system: CODE-COMPLETE RUNTIME-UNVERIFIED with a handoff, never READY with a pending in a footnote
 
 ## Bypass policy
 

@@ -10,8 +10,8 @@ description: >
   "architecture decision record", "ADR", "before writing prompts", "pre-spec
   tech doc", "scope freeze". Trigger before `vibecoding-engineer` runs:
   without an engineering brief, the prompt sequence has no anchor.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
@@ -54,6 +54,21 @@ Extract the requirements, the proposed stack, and the constraints.
 | 6 | Security posture (OWASP Top 10, secret mgmt, audit logs)? | Applicable checklist |
 | 7 | Observability (metrics, logs, tracing, alerting)? | Proposed stack |
 | 8 | Compliance (GDPR, AI Act, DORA, HIPAA, sector-specific)? | Applicable list |
+
+### 2-bis. Build-versus-reuse checkpoint (new in v0.2)
+
+Before you design an engine, ask yourself whether that engine is a commodity. The question applies at EVERY altitude of the stack, and it should also be framed one level ABOVE the piece you are about to write: very often the entire subsystem already exists and is mature, not just the component you had in mind.
+
+The reuse ladder. You only step down a rung with a stated reason:
+
+1. An asset you already have (an internal library, an established pattern, code from another project)
+2. Open-source adoption (a pinned dependency, a vendored module, a pattern extracted with provenance)
+3. A third-party managed service or harness (cost and lock-in stated explicitly)
+4. Build from scratch: only for what makes the product unique, or when it is genuinely simpler than adopting something
+
+Rule of thumb: **reuse the engine, build the edge**. Products that die on their own reinvented engine did not make one bad decision on day one, they made twenty small ones, each of which looked reasonable at the time.
+
+In the brief, state the outcome on one line: `Build-vs-reuse: <capability> → <reuse X | adopt Y | service Z | build from scratch because <reason>>`. A justified "build from scratch" is a valid outcome; an implicit one is not.
 
 ### 3. Formal architecture decision
 
@@ -107,6 +122,7 @@ See the `delivery-completeness.md` rule if it ships with your pack, otherwise us
 ## Validation Checkpoint
 
 - [ ] All 8 technical questions answered (or the gap explicitly flagged)
+- [ ] Build-vs-reuse declared for every non-trivial capability
 - [ ] An ADR written for every non-default decision
 - [ ] The 18-item DoD filled in or adapted
 - [ ] Blocking inputs listed with an owner and a deadline

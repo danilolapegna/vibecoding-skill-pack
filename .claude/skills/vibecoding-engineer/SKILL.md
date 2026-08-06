@@ -4,7 +4,7 @@ description: >
   Production-ready prompt generator for industrial-scale agentic vibecoding.
   From a product spec and a technical architecture, generates a complete set
   of prompts for architecture, feature, testing, CI/CD, security, deployment,
-  with an Anti-Pattern Registry of 12 failure modes integrated by design.
+  with an Anti-Pattern Registry of 26 failure modes integrated by design.
   Each generated prompt declares which failure modes it prevents and which
   test gates verify them. Use this skill when the user mentions generating
   prompts for AI coding assistants (Cursor, Lovable, Claude Code, Devin, GitHub
@@ -16,15 +16,15 @@ description: >
   for codebase", "engineering prompt sequence". Make sure to use this skill
   whenever the user wants prompts that guide an AI coding assistant through a
   structured build, even if they do not say "vibecoding" explicitly.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
 
 # Vibecoding Engineer, Production-Ready Prompts with Anti-Pattern Registry
 
-> The canonical skill for generating prompts aimed at AI coding assistants working in vibecoding mode. Output: an ordered sequence of self-contained prompt templates, traced back to the requirements in the product spec, with explicit coverage of 12 known failure modes in agentic systems.
+> The canonical skill for generating prompts aimed at AI coding assistants working in vibecoding mode. Output: an ordered sequence of self-contained prompt templates, traced back to the requirements in the product spec, with explicit coverage of 26 known failure modes: 12 in agentic system design, 14 in production delivery.
 
 ## Quality Gate Profile
 
@@ -39,7 +39,7 @@ maintainer: github.com/danilolapegna
 1. Spec-Driven: every prompt derives directly from the product spec and the technical architecture, never from vague descriptions. Functional requirements become executable instructions, each traced by a unique REQ-ID.
 2. Gate-Integrated: constraints coming from the security check, the performance audit and the devops readiness review are folded into every prompt as guardrails, not bolted on as a separate post-coding step.
 3. Context-Layered: every prompt carries the context the AI coding assistant actually needs (DB schema, API contracts, dependency list, coding standards), which kills the prompt, error, re-prompt cycle.
-4. FM-Aware: every prompt is check-listed against the Failure Mode Registry (12 FM-XX). Preventive patterns are built into the prompt template by design. Test gates are auto-suggested for every FM-XX relevant to the context.
+4. FM-Aware: every prompt is check-listed against the Failure Mode Registry (26 FM-XX). Preventive patterns are built into the prompt template by design. Test gates are auto-suggested for every FM-XX relevant to the context. Deployment and CI/CD prompts draw mostly from Part B of the registry, architecture prompts from Part A.
 
 Framework: Specification-First Prompting + Defense-in-Depth + Failure-Mode-Preventive.
 
@@ -108,8 +108,14 @@ For EVERY generated prompt: a specific requirement traced, self-contained contex
 
 ## Failure Mode Registry (canonical reference)
 
-> Origin: catalogued from real post-mortems of production-grade agentic systems. 12 failure modes that keep recurring across agentic AI projects.
+> Origin: catalogued from real post-mortems of production-grade agentic systems. 26 failure modes that keep recurring across projects.
 >
+> The registry has two parts. **Part A (FM-01 to FM-12)** covers the DESIGN of an agentic system: how the agent reasons, where it keeps state, what it shows the user. **Part B (FM-13 to FM-26)** covers DELIVERY: the ways green code reaches production and does not work. Part B comes out of real deploy post-mortems and is the v0.2 addition.
+>
+> The distinction matters because the two groups are prevented at different moments. Part A is prevented while you design the agent, so it lives in the architecture prompts. Part B is prevented while you ship, so it lives in the CI gates, the hooks and the post-deploy probes. A prompt that covers only Part A produces a well-designed agent that nobody manages to get into production.
+
+### Part A, agentic system design
+
 | ID | Symptom | Preventive pattern | Test gate |
 |---|---|---|---|
 | FM-01 | Orchestrator loops in circles, collecting ideas with no goal | Alignment score logged for every skill invocation, periodic audit aborts the run below threshold | `orchestrator-goal-filter.test` |
@@ -124,6 +130,27 @@ For EVERY generated prompt: a specific requirement traced, self-contained contex
 | FM-10 | UI agents treated as second-class | Mandatory pairing with retrieving agents | `ui-agent-pairing.test` |
 | FM-11 | Shotgun quick-action menu before the prompt | Prompt-only home plus an LLM-guided runtime | `home-no-quick-actions.test` |
 | FM-12 | Numbers pulled out of thin air passed off as fact | Schema: every number carries an `evidence_class` enum (Verified/Declared/Inferred) | `numeric-claim-tagging.test` |
+
+### Part B, delivery and production
+
+> The common thread: every row below is a conflation of two things that look identical and are not. Compiles is not boots. Boots is not reachable. Renders is not works. Local is not deployed. Green in CI is not live for the user.
+
+| ID | Symptom | Preventive pattern | Test gate |
+|---|---|---|---|
+| FM-13 | A "successful" build that ships a dead bundle: the client env vars are missing and the app goes to a white screen at boot | Fail-closed guard in the build: if a required env var is missing, the build FAILS (the last good deploy stays live). The check runs on the channel where commits actually land, not only on pull requests | `build-env-guard.test` |
+| FM-14 | "Renders" read as "works": the smoke test mounts a component on fake data locally, and the result gets taken as proof about the deployed surface | The evidence declares three fields: `data` (real or stubbed), a success criterion that names the real CONTENT expected (never "rendered", never "no crash"), and the deployed URL that was verified | `smoke-evidence-substance.test` |
+| FM-15 | Split deploy: the frontend goes out with the push while migrations and functions need a separate apply, so the two halves diverge by default | A deploy manifest that lists every artifact and the confirmation it landed; "done" stays blocked until both halves are confirmed | `split-deploy-parity.test` |
+| FM-16 | Compiles but does not boot: the type check passes and the deployed artifact dies at startup (the classic: a duplicate export in a shared module that takes down every importer) | Post-deploy boot probe against the real gateway for every changed function; when a shared module changes, the probe runs against all its importers, not just the file you touched | `boot-probe.test` |
+| FM-17 | Boots but cannot be triggered: the endpoint answers 200 to your test calls and rejects the credential its real scheduler sends. The feature never runs, silently | A canonical auth helper that accepts every credential the real trigger can present, verified against the actual trigger rather than against an assumption | `trigger-auth.test` |
+| FM-18 | The credential dies with the code unchanged: auth breaks in production without anyone having deployed anything | Scheduled probe OUTSIDE the platform that extracts the key from the DEPLOYED bundle and tests that one against the real auth endpoint. Testing an assumed key produces false alarms at the first drift | `auth-health.test` (cron, off-platform) |
+| FM-19 | A test runner that will not start treated as a skip: "tests didn't run" accepted as a delivery state | One canonical command that repairs the environment and then runs everything, propagating the exit code of every child process. A skip whose reason is a broken environment is REJECTED; a skip justified by scope stays legitimate | `runner-boot.test` |
+| FM-20 | Fake axes: a step or a wizard offers a choice the frontend INFERRED rather than one the server DECLARED. It looks like a decision and nothing backs it | Every decision element cites the code location of the server field that declares it (two-sided citation). If that field does not exist, it gets confessed as derived or inert, not passed off as a real choice | `decision-provenance.test` |
+| FM-21 | Self-attested integration: both sides compile, each one is internally valid, and the contract between them does not match (ignored fields, diverging scopes, misaligned enums) | Independent audit that reads BOTH sides of every contract and cites the two code locations. Self-attestation cannot see the mismatch by construction: each side is valid on its own | `integration-contract.test` |
+| FM-22 | Reactive removal: you delete files or exports and discover the call sites when something breaks at runtime | Forward search for ALL call sites before the removal, a classification of each one (comment, live code, test, doc), and the refactor in the same commit as the drop | `drop-impact.test` |
+| FM-23 | Ephemeral data with no lifecycle: a TTL column with no index, no cleanup mechanism, no declared retention. Rows pile up silently for months | Index on the TTL column, a declared cleanup mechanism and documented retention IN THE SAME migration that creates the table. "We will add the cleanup later" is not enforceable | `ephemeral-lifecycle.test` |
+| FM-24 | "Done" declared at 70%: the missing features are not declared partial, they simply go unmentioned | Every requirement in the plan gets an explicit DONE, PARTIAL or NOT-STARTED status. Silence is not a status. A plan-versus-shipped table, never prose | `plan-delta.test` |
+| FM-25 | Publication inferred from the interface: a toast, a panel that closes or a push that succeeded, all read as proof the thing is live | The proof is read from the SERVED ARTIFACT: download the deployed bundle and look for a marker that survives minification, plus a control marker that must NOT be there. A UI event proves nothing | `publish-artifact.test` |
+| FM-26 | Version control metadata inside a cloud-sync folder: the syncer rewrites objects and refs while git is working on them, producing jumping HEADs and corrupted rebases | Exclude the repo metadata from the sync (the same mechanism you already use for installed dependencies) and probe integrity at the start of the session, before writing | `vcs-location.test` |
 
 **How to use the Registry**:
 

@@ -7,8 +7,8 @@ description: >
   asks to "extend existing repo", "onboard a codebase", "audit before
   modifying", "what's in this repo", "map the project", "read the code". Conditional dependency of `vibecoding-engineer`: trigger when
   target is an existing repo, skip for greenfield.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
@@ -33,7 +33,7 @@ Produces a `codebase-state.md` document in `context/`, which `vibecoding-enginee
 
 "Codebase onboarding", "audit before extending", "what's in this repo", "map the project", "onboard repo", "read the code", "coding conventions".
 
-## Process (5 steps)
+## Process (6 steps)
 
 ### 1. Tree structure scan
 
@@ -76,6 +76,22 @@ grep -rE "console\.(log|debug)" --include="*.{ts,js}" src/ 2>/dev/null | head -1
 grep -irE "(api[_-]?key|secret|password)\s*=\s*['\"]" --include="*.{ts,js,py,go,env}" | head -10
 ```
 
+### 6. State verification (new in v0.2)
+
+Two checks that belong BEFORE you write anything into the repo, not after.
+
+**State is verified at the source.** File names, directory names, version numbers in filenames, modification dates and open tasks are not a state machine. A file called `v3-final` does not prove that v3 is the version in use; a migration sitting in the repo does not prove it was ever applied; a README describing an architecture does not prove that architecture is the current one. For every fact you write into `codebase-state.md`, query the authoritative source for that domain (the database for the schema, the gateway for deployed functions, the command output for the pipeline) and date it. When two sources contradict each other, the more recent one wins and the contradiction gets written down, not resolved by intuition.
+
+**Where the version control metadata lives.** A `.git` directory inside a cloud-synced folder (Dropbox, iCloud, OneDrive, Drive) is unstable by construction: the syncer rewrites objects and refs while git is working on them.
+
+```bash
+GITDIR="$(git rev-parse --git-dir 2>/dev/null)" && GITDIR_REAL="$(cd "$GITDIR" && pwd -P)"
+echo "$GITDIR_REAL" | grep -qiE "CloudStorage|Dropbox|iCloud|OneDrive|Google ?Drive|Box Sync" \
+  && echo "WARNING: version control metadata inside a cloud-sync root. Exclude it from sync before writing." \
+  && git fsck --connectivity-only --no-progress >/dev/null 2>&1 || echo "integrity probe failed: resolve before editing"
+```
+
+If the probe fails, or you find an interrupted rebase or merge, the first deliverable is putting the repository back in order, not extending it (FM-26).
 
 ## Output
 
@@ -96,6 +112,8 @@ grep -irE "(api[_-]?key|secret|password)\s*=\s*['\"]" --include="*.{ts,js,py,go,
 - [ ] Conventions extracted from 3 to 5 representative files
 - [ ] TODO/FIXME/HACK/XXX scan executed
 - [ ] Anti-patterns catalogued (security, performance, naming inconsistencies)
+- [ ] Every state fact verified against its authoritative source and dated, never inferred from file names or file dates
+- [ ] Location of the git metadata checked, and integrity probe run, before writing
 - [ ] Onboarding score 1-10 assigned, with rationale
 
 ## Fallback
