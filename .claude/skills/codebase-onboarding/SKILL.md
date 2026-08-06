@@ -8,8 +8,8 @@ description: >
   "what's in this repo", "leggi il codice", "fammi un mappa del progetto".
   Conditional dependency of `vibecoding-engineer`: trigger when target is
   an existing repo, skip for greenfield.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
@@ -34,7 +34,7 @@ Output documento `codebase-state.md` in `context/` che il vibecoding-engineer le
 
 "Codebase onboarding", "audit before extending", "what's in this repo", "map the project", "leggi il codice", "onboard repo", "mappa del progetto", "convenzioni del codice".
 
-## Processo (5 step)
+## Processo (6 step)
 
 ### 1. Tree structure scan
 
@@ -77,6 +77,23 @@ grep -rE "console\.(log|debug)" --include="*.{ts,js}" src/ 2>/dev/null | head -1
 grep -irE "(api[_-]?key|secret|password)\s*=\s*['\"]" --include="*.{ts,js,py,go,env}" | head -10
 ```
 
+### 6. State verification (nuovo in v0.2)
+
+Due controlli che vanno fatti PRIMA di scrivere nel repo, non dopo.
+
+**Lo stato si verifica alla fonte.** Nomi di file, nomi di cartelle, numeri di versione nei filename, date di modifica e task aperti non sono una state machine. Un file `v3-final` non prova che la v3 sia quella attiva; una migration presente non prova che sia stata applicata; un README che descrive un'architettura non prova che sia quella corrente. Per ogni fatto che scrivi in `codebase-state.md`, interroga la fonte autoritativa di quel dominio (il DB per lo schema, il gateway per le funzioni deployate, l'output del comando per la pipeline) e datalo. Se due fonti si contraddicono, vince quella piu' recente e la contraddizione va scritta, non risolta a intuito.
+
+**Dove vivono i metadati di version control.** Un `.git` dentro una cartella sincronizzata sul cloud (Dropbox, iCloud, OneDrive, Drive) e' instabile per costruzione: il syncer riscrive oggetti e ref mentre git ci lavora.
+
+```bash
+GITDIR="$(git rev-parse --git-dir 2>/dev/null)" && GITDIR_REAL="$(cd "$GITDIR" && pwd -P)"
+echo "$GITDIR_REAL" | grep -qiE "CloudStorage|Dropbox|iCloud|OneDrive|Google ?Drive|Box Sync" \
+  && echo "WARNING: version control metadata inside a cloud-sync root. Exclude it from sync before writing." \
+  && git fsck --connectivity-only --no-progress >/dev/null 2>&1 || echo "integrity probe failed: resolve before editing"
+```
+
+Se il probe fallisce o trovi un rebase/merge interrotto, la prima consegna e' rimettere in sesto il repo, non estenderlo (FM-26).
+
 ## Output
 
 `context/codebase-state.md` con le 7 sezioni sopra compilate. Score finale onboarding (1-10) basato su quanto e clean il codebase.
@@ -96,6 +113,8 @@ grep -irE "(api[_-]?key|secret|password)\s*=\s*['\"]" --include="*.{ts,js,py,go,
 - [ ] Convenzioni estratte da 3-5 file representative
 - [ ] TODO/FIXME/HACK/XXX scan eseguito
 - [ ] Anti-pattern catalogati (security, performance, naming inconsistencies)
+- [ ] Ogni fatto di stato verificato alla fonte autoritativa e datato, non dedotto da nomi o date file
+- [ ] Posizione dei metadati git verificata + probe di integrita' eseguito prima di scrivere
 - [ ] Score onboarding 1-10 assegnato + razionale
 
 ## Fallback

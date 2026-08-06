@@ -9,8 +9,8 @@ description: >
   "architecture decision record", "ADR", "before writing prompts", "pre-spec
   tech doc", "scope freeze". Trigger before `vibecoding-engineer` runs:
   without an engineering brief, the prompt sequence has no anchor.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
@@ -53,6 +53,21 @@ Estrai requirements + stack proposed + vincoli.
 | 6 | Security posture (OWASP Top 10, secret mgmt, audit logs)? | Checklist applicabile |
 | 7 | Observability (metrics, logs, tracing, alerting)? | Stack proposto |
 | 8 | Compliance (GDPR, AI Act, DORA, HIPAA, settore-specific)? | Lista applicabile |
+
+### 2-bis. Build-versus-reuse checkpoint (nuovo in v0.2)
+
+Prima di progettare un motore, chiediti se quel motore e' una commodity. La domanda va posta a OGNI altitudine dello stack, e formulata anche un livello SOPRA il pezzo che stai per scrivere: molto spesso esiste gia' e maturo il sottosistema intero, non solo il componente che avevi in mente.
+
+Scala di riuso, si scende di gradino solo con un motivo dichiarato:
+
+1. Un asset che hai gia' (libreria interna, pattern consolidato, codice di un altro progetto)
+2. Adozione opensource (dipendenza pinnata, modulo vendorizzato, pattern estratto con provenance)
+3. Servizio o harness gestito da terzi (costo e lock-in dichiarati esplicitamente)
+4. Build da zero: solo per cio' che rende il prodotto unico, oppure quando e' davvero piu' semplice dell'adozione
+
+Regola pratica: **il motore si riusa, il bordo si costruisce**. I prodotti che muoiono sul proprio motore reinventato non hanno preso una decisione sbagliata il primo giorno, ne hanno prese venti piccole ognuna delle quali sembrava ragionevole.
+
+Nel brief, dichiara l'esito in una riga: `Build-vs-reuse: <capability> → <riuso di X | adozione di Y | servizio Z | build da zero perche' <motivo>>`. Un "build da zero" motivato resta un esito valido; un "build da zero" implicito no.
 
 ### 3. Decisione architetturale formale
 
@@ -106,6 +121,7 @@ Vedi rule `delivery-completeness.md` se presente nel pack, altrimenti DoD minima
 ## Validation Checkpoint
 
 - [ ] 8 domande tecniche risposte (o gap esplicito flagged)
+- [ ] Build-vs-reuse dichiarato per ogni capability non banale
 - [ ] ADR scritto per ogni decisione non-default
 - [ ] DoD 18-voci compilato o adattato
 - [ ] Blocking input listed con owner + entro quando

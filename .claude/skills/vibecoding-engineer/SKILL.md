@@ -4,7 +4,7 @@ description: >
   Production-ready prompt generator for industrial-scale agentic vibecoding.
   From a product spec and a technical architecture, generates a complete set
   of prompts for architecture, feature, testing, CI/CD, security, deployment,
-  with an Anti-Pattern Registry of 12 failure modes integrated by design.
+  with an Anti-Pattern Registry of 26 failure modes integrated by design.
   Each generated prompt declares which failure modes it prevents and which
   test gates verify them. Use this skill when the user mentions generating
   prompts for AI coding assistants (Cursor, Lovable, Claude Code, Devin, GitHub
@@ -16,15 +16,15 @@ description: >
   for codebase", "engineering prompt sequence". Make sure to use this skill
   whenever the user wants prompts that guide an AI coding assistant through a
   structured build, even if they do not say "vibecoding" explicitly.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
 
 # Vibecoding Engineer, Production-Ready Prompts with Anti-Pattern Registry
 
-> Skill canonica per generare prompt destinati ad AI coding assistant in modalita vibecoding. Output: una sequenza ordinata di prompt template self-contained, tracciati ai requisiti del product spec, con coverage esplicito di 12 failure mode noti dei sistemi agentici.
+> Skill canonica per generare prompt destinati ad AI coding assistant in modalita vibecoding. Output: una sequenza ordinata di prompt template self-contained, tracciati ai requisiti del product spec, con coverage esplicito di 26 failure mode noti: 12 di design del sistema agentico, 14 di consegna in produzione.
 
 ## Quality Gate Profile
 
@@ -39,7 +39,7 @@ maintainer: github.com/danilolapegna
 1. Spec-Driven: ogni prompt e derivato direttamente da product-spec e technical-architecture, non da descrizioni vaghe. I requisiti funzionali diventano istruzioni eseguibili tracciate con REQ-ID univoco.
 2. Gate-Integrated: integra automaticamente vincoli da security check, performance audit, devops readiness come guardrail dentro ogni prompt, non come step separato post-coding.
 3. Context-Layered: ogni prompt include il contesto necessario per l'AI coding assistant (schema DB, API contracts, dependency list, coding standards), eliminando il ciclo prompt → errore → ri-prompt.
-4. FM-Aware: ogni prompt e check-listed contro il Failure Mode Registry (12 FM-XX). Pattern preventivi integrati by-design nel prompt template. Test gate auto-suggested per ogni FM-XX rilevante al contesto.
+4. FM-Aware: ogni prompt e check-listed contro il Failure Mode Registry (26 FM-XX). Pattern preventivi integrati by-design nel prompt template. Test gate auto-suggested per ogni FM-XX rilevante al contesto. I prompt di deployment e CI/CD pescano soprattutto dalla Parte B del registry, quelli di architettura dalla Parte A.
 
 Framework: Specification-First Prompting + Defense-in-Depth + Failure-Mode-Preventive.
 
@@ -108,7 +108,13 @@ Per OGNI prompt generato: traccia requisito specifico, contesto self-contained, 
 
 ## Failure Mode Registry (canonical reference)
 
-> Origine: catalogati da post-mortem reali di sistemi agentici production-grade. 12 failure mode che si ripetono cross-progetti AI agent.
+> Origine: catalogati da post-mortem reali di sistemi agentici production-grade. 26 failure mode che si ripetono cross-progetti.
+>
+> Il registry ha due parti. **Parte A (FM-01 a FM-12)** riguarda il DESIGN di un sistema agentico: come l'agente ragiona, dove tiene lo stato, cosa mostra all'utente. **Parte B (FM-13 a FM-26)** riguarda la CONSEGNA: i modi in cui codice verde arriva in produzione e non funziona. Parte B nasce da post-mortem di deploy reali ed e' l'aggiunta della v0.2.
+>
+> La distinzione conta perche' i due gruppi si prevengono in momenti diversi. Parte A si previene mentre progetti l'agente, quindi vive nei prompt di architettura. Parte B si previene mentre consegni, quindi vive nei gate di CI, negli hook e nelle sonde post-deploy. Un prompt che copre solo la Parte A produce un agente ben disegnato che nessuno riesce a mandare in produzione.
+
+### Parte A, design del sistema agentico
 
 | ID | Sintomo | Preventive pattern | Test gate |
 |---|---|---|---|
@@ -124,6 +130,27 @@ Per OGNI prompt generato: traccia requisito specifico, contesto self-contained, 
 | FM-10 | Agenti UI come second-class | Pairing mandatory con retrieving agents | `ui-agent-pairing.test` |
 | FM-11 | Quick action menu shotgun pre-prompt | Home prompt-only + LLM-guided runtime | `home-no-quick-actions.test` |
 | FM-12 | Numeri "a sentimento" passati come fact | Schema: ogni numero con `evidence_class` enum (Verified/Declared/Inferred) | `numeric-claim-tagging.test` |
+
+### Parte B, consegna e produzione
+
+> Il filo conduttore: ogni riga qui sotto e' una conflazione fra due cose che sembrano la stessa e non lo sono. Compila non e' boota. Boota non e' raggiungibile. Renderizza non e' funziona. Locale non e' deployato. Verde in CI non e' vivo per l'utente.
+
+| ID | Sintomo | Preventive pattern | Test gate |
+|---|---|---|---|
+| FM-13 | Build "riuscita" che spedisce un bundle morto: mancano le env var del client, l'app va in schermo bianco al boot | Guard fail-closed nel build: se una env var richiesta manca, il build FALLISCE (l'ultimo deploy buono resta vivo). Il check gira sul canale su cui i commit atterrano davvero, non solo sulle pull request | `build-env-guard.test` |
+| FM-14 | "Renders" letto come "works": lo smoke monta un componente su dati finti in locale e l'esito passa per prova della superficie deployata | L'evidenza dichiara tre campi: `data` (real o stubbed), un criterio di successo che nomina CONTENUTO reale atteso (mai "rendered", mai "no crash"), e l'URL deployato verificato | `smoke-evidence-substance.test` |
+| FM-15 | Deploy diviso: il frontend parte col push mentre migration e funzioni richiedono un apply separato, e le due meta' divergono per default | Manifest di deploy che elenca ogni artefatto e la conferma del suo atterraggio; "done" resta bloccato finche' entrambe le meta' non sono confermate | `split-deploy-parity.test` |
+| FM-16 | Compila ma non boota: il type-check passa e l'artefatto deployato muore all'avvio (classico: export duplicato in un modulo condiviso che stende ogni importer) | Sonda di boot post-deploy contro il gateway reale per ogni funzione cambiata; quando cambia un modulo condiviso la sonda gira su tutti gli importer, non solo sul file toccato | `boot-probe.test` |
+| FM-17 | Boota ma non e' innescabile: l'endpoint risponde 200 alle tue chiamate di test e rifiuta la credenziale che il suo scheduler reale gli manda. La feature non gira mai, in silenzio | Helper di auth canonico che accetta ogni credenziale che il trigger reale puo' presentare, verificato contro il trigger vero e non contro un'assunzione | `trigger-auth.test` |
+| FM-18 | La credenziale muore a codice invariato: l'auth si rompe in produzione senza che nessuno abbia deployato niente | Sonda schedulata FUORI dalla piattaforma che estrae la chiave dal bundle DEPLOYATO e prova quella contro l'endpoint auth reale. Testare una chiave assunta produce falsi allarmi al primo drift | `auth-health.test` (cron, off-platform) |
+| FM-19 | Un test runner che non parte trattato come skip: "tests didn't run" accettato come stato di consegna | Un comando canonico che ripara l'ambiente e poi esegue tutto, propagando l'exit code di ogni processo figlio. Una skip il cui motivo e' un guasto d'ambiente viene RIGETTATA; una skip motivata dallo scope resta legittima | `runner-boot.test` |
+| FM-20 | Assi finti: uno step o un wizard offre una scelta che il frontend ha INFERITO, non che il server ha DICHIARATO. Sembra una decisione, non e' sostenuta da niente | Ogni elemento di decisione cita la posizione di codice del campo server che lo dichiara (citazione a due lati). Se quel campo non esiste, va confessato come derivato o inerte, non spacciato per scelta reale | `decision-provenance.test` |
+| FM-21 | Integrazione auto-attestata: entrambi i lati compilano, ognuno e' internamente valido, e il contratto fra loro non combacia (campi ignorati, scope divergenti, enum disallineate) | Audit indipendente che legge ENTRAMBI i lati di ogni contratto e cita le due posizioni di codice. L'auto-attestazione non vede il mismatch per costruzione: ogni lato e' valido da solo | `integration-contract.test` |
+| FM-22 | Rimozione reattiva: cancelli file o export e scopri i call site quando qualcosa si rompe a runtime | Ricerca forward di TUTTI i call site prima della rimozione, classificazione di ognuno (commento, codice attivo, test, doc), refactor nello stesso commit del drop | `drop-impact.test` |
+| FM-23 | Dati effimeri senza ciclo di vita: colonna TTL senza indice, senza meccanismo di pulizia, senza retention dichiarata. Le righe si accumulano in silenzio per mesi | Indice sulla colonna TTL, meccanismo di cleanup dichiarato e retention documentata NELLA STESSA migration che crea la tabella. "Il cleanup lo aggiungiamo dopo" non e' enforce-abile | `ephemeral-lifecycle.test` |
+| FM-24 | "Done" dichiarato al 70%: le feature mancanti non sono dichiarate parziali, semplicemente non vengono menzionate | Ogni requisito del piano riceve uno stato esplicito DONE, PARTIAL o NOT-STARTED. Il silenzio non e' uno stato. Tabella piano contro realizzato, mai prosa | `plan-delta.test` |
+| FM-25 | Pubblicazione dedotta dall'interfaccia: un toast, un pannello che si chiude o un push andato a buon fine letti come prova che la cosa e' live | La prova si legge dall'ARTEFATTO servito: scarica il bundle deployato e cerca un marcatore che sopravvive alla minificazione, piu' un marcatore di controllo che NON deve esserci. Un evento di UI non prova niente | `publish-artifact.test` |
+| FM-26 | Metadati di version control dentro una cartella cloud-sync: il syncer riscrive oggetti e ref mentre git ci lavora, e produce HEAD che saltano e rebase corrotti | Escludere i metadati del repo dalla sincronizzazione (stesso meccanismo usato per le dipendenze installate) e sondare l'integrita' a inizio sessione, prima di scrivere | `vcs-location.test` |
 
 **Come usare il Registry**:
 

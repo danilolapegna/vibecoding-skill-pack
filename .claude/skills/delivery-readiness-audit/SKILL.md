@@ -9,8 +9,8 @@ description: >
   check", "DoD check", "READY check", "audit prima del merge", "verifica
   consegna". Mandatory downstream di `vibecoding-engineer`: il prompt sequence
   chiude solo se questo audit dice READY.
-last_updated: 2026-05-13
-schema_version: 1
+last_updated: 2026-08-06
+schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
 ---
@@ -86,10 +86,35 @@ Tabella 4 colonne:
 
 Ogni gap deve avere razionale esplicito (decisione conscious vs scoping out vs blocked). No "dimenticato".
 
-### 4. Verdict
+### 4. Verdict (3 esiti, non 2)
 
-- **READY**: DoD 18/18 verde, mechanical scan 0 fail, delta plan ha gap = 0 OR ogni gap ha razionale dichiarato accettabile, Self-Score >= 9/10, Adversarial Review answered.
-- **INCOMPLETE**: anything else. Riformula come work-in-progress. NO claim done.
+Il verdetto binario READY/INCOMPLETE della v0.1 aveva un buco: non distingueva fra "il codice e' incompleto" e "il codice e' completo ma nessuno ha ancora visto il sistema girare davvero". Quel secondo caso finiva schiacciato su READY, ed e' il modo piu' comune in cui un deliverable verde diventa un incidente. Da v0.2 gli esiti sono tre.
+
+- **READY**: DoD verde, mechanical scan 0 fail, ogni gap del delta plan ha razionale accettabile, **piu' una osservazione a runtime del sistema reale con dati reali**. Il vocabolario di rilascio (`production-ready`, `works end-to-end`, `live`, `shipped to users`) e' legale solo qui.
+- **CODE-COMPLETE, RUNTIME-UNVERIFIED**: tutto il resto e' verde ma l'audit non ha potuto eseguire il sistema reale (piattaforma gestita da terzi, ambiente browser-gated, credenziali non disponibili). E' un esito ONESTO e legittimo, non una bocciatura, ma richiede un handoff tracciato e vieta il vocabolario di rilascio.
+- **INCOMPLETE**: qualunque altra cosa. Riformula come work-in-progress. Nessun claim done.
+
+#### Blocco richiesto per READY
+
+```markdown
+## Runtime observation
+surface: <route o componente>
+data: real
+observed: <il valore o la decisione REALE vista a schermo, mai "rendered", mai "no crash">
+verified_at: <URL deployato non locale>
+```
+
+#### Blocco richiesto per CODE-COMPLETE, RUNTIME-UNVERIFIED
+
+```markdown
+## Runtime handoff
+cannot-run: <perche', in concreto>
+owner: <chi puo' eseguirlo>
+to-verify: <i click esatti da fare + il dato reale atteso>
+tracker: <link o id>
+```
+
+Regola che chiude il buco: **un "pending, lo verifichiamo dopo" non puo' convivere con un verdetto READY**. Se resta una verifica runtime sospesa, il verdetto scende a CODE-COMPLETE, RUNTIME-UNVERIFIED, che a sua volta obbliga all'handoff. Un pending in nota a pie' di pagina e' esattamente il meccanismo con cui la verifica viene rimandata per sempre.
 
 ## Skill chains
 
@@ -103,8 +128,10 @@ Ogni gap deve avere razionale esplicito (decisione conscious vs scoping out vs b
 - [ ] DoD 18-voci risposta esplicita YES/NO per ogni voce
 - [ ] Mechanical scan eseguito, 0 fail
 - [ ] Delta plan vs realizzato compilato come tabella 4 colonne
-- [ ] Verdict binario dichiarato (READY o INCOMPLETE, no zone grigie)
-- [ ] Se READY, output di smoke test allegato
+- [ ] Verdict dichiarato fra i tre esiti, senza zone grigie
+- [ ] Se READY, blocco `## Runtime observation` compilato con un valore reale osservato
+- [ ] Se CODE-COMPLETE RUNTIME-UNVERIFIED, blocco `## Runtime handoff` completo di owner e checklist
+- [ ] Nessun claim di rilascio in un deliverable che non sia READY
 - [ ] Se INCOMPLETE, lista actionable per riformulare
 
 ## Fallback
@@ -112,6 +139,7 @@ Ogni gap deve avere razionale esplicito (decisione conscious vs scoping out vs b
 - DoD checklist non disponibile → usa default 18-voci sopra
 - Mechanical scan fail → INCOMPLETE automatico, no override
 - Engineering brief non esiste → flag "audit-without-baseline" + caveat in output
+- Sistema non eseguibile dall'audit → CODE-COMPLETE RUNTIME-UNVERIFIED con handoff, mai READY con un pending in nota
 
 ## Bypass policy
 

@@ -23,3 +23,6 @@ context/
 __pycache__/
 *.pyc
 node_modules/
+
+# Internal working context, never published
+CLAUDE.md
