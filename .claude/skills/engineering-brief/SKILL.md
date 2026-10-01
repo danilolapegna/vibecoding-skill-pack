@@ -4,13 +4,13 @@ description: >
   Mandatory upstream skill of `vibecoding-engineer`. Produces an operational
   technical brief well before the prompt sequence: a justified stack,
   architecture decisions with rationale, an anti-pattern catalog that applies
-  to this project, a fillable Definition of Done (DoD), and the blocking
-  inputs still outstanding.
+  to this project, a Definition of Done (DoD) declared per surface, and the
+  blocking inputs still outstanding.
   Use this skill when the user mentions "engineering brief", "tech spec",
   "architecture decision record", "ADR", "before writing prompts", "pre-spec
   tech doc", "scope freeze". Trigger before `vibecoding-engineer` runs:
   without an engineering brief, the prompt sequence has no anchor.
-last_updated: 2026-08-06
+last_updated: 2026-10-01
 schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
@@ -29,7 +29,7 @@ Produces a `_plan.md` (or `engineering-brief.md`) document with 7 sections:
 3. **Architecture decision**: the stack with its rationale, the 3-5 alternatives considered, and why this one won
 4. **Pre-declared test list**: the minimum tests the delivery has to pass before it counts as done
 5. **Explicit OUT-of-scope**: what is NOT being built in this phase, why, and when it gets revisited
-6. **18-item DoD**: the Definition of Done checklist (see the `delivery-completeness.md` rule if you have it)
+6. **Definition of Done by surface**: for each surface the build will touch, the evidence that will count as done (the same surfaces `delivery-readiness-audit` checks at the end)
 7. **Blocking inputs**: open items that need user input before the work can continue
 
 ## Trigger phrases
@@ -70,6 +70,8 @@ Rule of thumb: **reuse the engine, build the edge**. Products that die on their 
 
 In the brief, state the outcome on one line: `Build-vs-reuse: <capability> → <reuse X | adopt Y | service Z | build from scratch because <reason>>`. A justified "build from scratch" is a valid outcome; an implicit one is not.
 
+**Reopen the checkpoint during the build (new in v0.3).** The question is not only for day one. When two rounds of fixes fail to converge on the same problem, or when a change that should not alter the meaning of the input (a paraphrase, a reordering) opens a new class of failure, the next step is the reuse question, not another patch. A series of correct local fixes does not prove that the boundary is right. In the post-mortem behind this paragraph, every fix to a natural-language planner was valid, every new paraphrase broke something else, and the question of whether to build that engine at all came up only when a human stopped the loop; a mature open-source engine already covered the job. Record the new outcome on the same `Build-vs-reuse:` line, with the date.
+
 ### 3. Formal architecture decision
 
 Write an Architecture Decision Record (ADR) for every non-default decision. ADR format:
@@ -95,9 +97,19 @@ Option X chosen
 Which tradeoffs we are accepting
 ```
 
-### 4. The 18-item Definition of Done (DoD)
+### 4. Definition of Done by surface (changed in v0.3)
 
-See the `delivery-completeness.md` rule if it ships with your pack, otherwise use this minimal DoD:
+Declare, for every surface this build will touch, the evidence that will count as done. Use the surface table of `delivery-readiness-audit` (step 2) as the list of surfaces, so that the audit reconciles against a promise made up front instead of a checklist written afterwards, and write each line in this project's own terms: which tests, which deployed URL, which probe, which migration replay.
+
+```
+Done by surface:
+- <surface from the audit table> -> <the evidence that will count, in this project's terms>
+- <surface> -> out of scope for this build, because <reason>
+```
+
+Surfaces the build will not touch are declared out of scope here, so that nobody runs their checks later "for completeness". A fixed checklist applied to every change makes the cost of verification follow activity instead of risk; the brief is where you decide which evidence this project actually needs.
+
+For a greenfield release, this minimal list is still the starting point:
 
 - [ ] All tests pass in CI
 - [ ] Coverage >= 80% (or the documented target)
@@ -124,7 +136,9 @@ See the `delivery-completeness.md` rule if it ships with your pack, otherwise us
 - [ ] All 8 technical questions answered (or the gap explicitly flagged)
 - [ ] Build-vs-reuse declared for every non-trivial capability
 - [ ] An ADR written for every non-default decision
-- [ ] The 18-item DoD filled in or adapted
+- [ ] Definition of Done declared per surface, with the evidence that will count
+- [ ] Surfaces the build will not touch declared out of scope, with a reason
+- [ ] Build-vs-reuse reopened if a fix loop stopped converging during the build
 - [ ] Blocking inputs listed with an owner and a deadline
 - [ ] Explicit OUT-of-scope documented
 

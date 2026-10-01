@@ -7,8 +7,11 @@
 ```bash
 git clone https://github.com/danilolapegna/vibecoding-skill-pack.git
 cd your-project
-cp -r vibecoding-skill-pack/.claude/ ./.claude/
+mkdir -p .claude
+cp -R ../vibecoding-skill-pack/.claude/. ./.claude/
 ```
+
+The same command upgrades an existing install. The trailing `/.` matters: with GNU `cp` (Linux, WSL, Git Bash), `cp -r pack/.claude/ ./.claude/` nests the pack in `.claude/.claude/` when `.claude/` already exists, and the old version stays active.
 
 Claude Code automatically discovers the skills in `.claude/skills/` and the rules in `.claude/rules/`. No further configuration needed.
 
@@ -88,6 +91,7 @@ rm -rf .claude/skills/codebase-onboarding
 rm -rf .claude/skills/delivery-readiness-audit
 rm .claude/rules/skill-chaining.md
 rm .claude/rules/skill-design-invariants.md
+rm .claude/rules/mechanical-gates-over-advisory.md
 ```
 
 (Leave `.claude/` itself in place if you have other custom skills.)

@@ -47,6 +47,18 @@ A gate with false positives trains the reflex to bypass it, and that reflex then
 - Prefer making the honest path CHEAP over making the dishonest path impossible. An explicit, tracked, low-friction way to confess gets used. A pure prohibition gets routed around.
 - If a gate has to be bypassed in an emergency, the bypass must leave a trace and carry an expiry, not be invisible.
 
+## A green gate is a claim too (new in v0.3)
+
+The four components make a rule executable. They do not make it right. Running gates on real builds since v0.2 produced a second list, about the gates themselves.
+
+**Presence is not truth.** A grep gate on an output block proves that the block exists. A receipt written by the agent that did the work can carry the exact header, a date and a list of "verified sources", and still cite a source that does not exist: one did, and the gate passed it. Evidence gates resolve what they cite, check that each source is the right kind of source for the claim it supports, and report how many sources they examined, resolved and rejected. Zero examined is a failure, not a pass.
+
+**Calibrate against false negatives too.** The section above guards against false positives. The opposite failure is quieter. A detector built on one axis (vocabulary) says CLEAN on material that fails on another (structure), and an author judging their own output shares the detector's blind spot. A prose checker built on word lists passed a set of help pages that a reader rejected at first sight, because every sentence had the same shape and almost none of them said anything checkable. Ship every gate with a negative control taken from real rejected material, and trust it only after it has been seen failing on it (FM-27). Keep a false-positive control taken from ordinary material next to it.
+
+**Fault-inject the gate itself.** Test what the gate does when its helper is missing, when it crashes, when its output cannot be parsed, when it matches zero files, and when it runs on another operating system. Real cases: hooks that exited 0 when their helper could not be found; a pattern written for GNU tools that failed open on macOS; a sweep that piped a crashing detector into grep and read the crash as green; an installer that printed success after its baseline step had crashed; and, in this very pack up to v0.2, file filters written with shell braces that grep never expands, so the scans matched nothing and passed everywhere. A gate that cannot fail closed is advisory with extra steps.
+
+**Route checks by the changed surface.** When every change pays for every check, the cost of verification follows activity rather than risk, the real proofs arrive late, and the slow path teaches people and agents to bypass the gate. Let the changed surface select the evidence, reuse a proof while its inputs are unchanged (FM-31), and run the full suite once at the stage or release boundary. `delivery-readiness-audit` does this routing.
+
 ## Periodic audit
 
 Every 60 days: for each rule, verify the four components are still there and that the gate has produced real traffic. A rule with no traffic, or with missing components, gets converted into a gate or archived. There is no third outcome: keeping it "for the record" is exactly the state this rule exists to prevent.
@@ -59,10 +71,14 @@ Every 60 days: for each rule, verify the four components are still there and tha
 - A silent skip when the source is unreachable, instead of a flag in the deliverable
 - Adding gates for completeness, manufacturing ceremony and training the bypass
 - Writing the prose first and the components later, if there is time left
+- A gate that greps for the evidence block and never resolves the evidence
+- A detector that has never been seen failing on real rejected material
+- A gate that exits 0 when its helper, its input or its file list is missing
 
 ## Versioning
 
 - **v1 (2026-08-06)**: first version. Distilled from an internal audit that measured how ineffective advisory rules are, and from the subsequent conversion of the framework's rules into mechanical gates.
+- **v2 (2026-10-01)**: new section "A green gate is a claim too": presence is not truth, calibration against false negatives, fault injection of the gate itself, routing by changed surface. From post-mortems of gates that passed while the thing they guarded was false, including fail-open checks found in this pack itself.
 
 ---
 
