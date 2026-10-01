@@ -22,7 +22,7 @@ engineering-brief (M upstream)
 vibecoding-engineer
     ↓ deliverables/vibecoding-engineer/
 delivery-readiness-audit (M downstream)
-    ↓ verdict READY or INCOMPLETE
+    ↓ verdict READY, CODE-COMPLETE-RUNTIME-UNVERIFIED (with a tracked handoff) or INCOMPLETE
 ```
 
 ## Enforcement protocol (4 steps + 1 entry point)

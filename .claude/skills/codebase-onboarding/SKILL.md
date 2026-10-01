@@ -7,7 +7,7 @@ description: >
   asks to "extend existing repo", "onboard a codebase", "audit before
   modifying", "what's in this repo", "map the project", "read the code". Conditional dependency of `vibecoding-engineer`: trigger when
   target is an existing repo, skip for greenfield.
-last_updated: 2026-08-06
+last_updated: 2026-10-01
 schema_version: 2
 license: MIT
 maintainer: github.com/danilolapegna
@@ -66,15 +66,22 @@ Read 3 to 5 representative files, one per layer (one component, one controller, 
 ### 5. Anti-pattern scan
 
 ```bash
+SRC_FILES=('*.ts' '*.tsx' '*.js' '*.jsx' '*.py' '*.go' '*.rb' '*.java')
+
+# Files the scan can see: if this prints 0, fix the patterns before reading any result below
+git ls-files -- "${SRC_FILES[@]}" | wc -l
+
 # TODO density
-grep -rE "TODO|FIXME|HACK|XXX" --include="*.{ts,js,py,go,rb,java}" | wc -l
+git grep -nE "TODO|FIXME|HACK|XXX" -- "${SRC_FILES[@]}" | wc -l
 
 # Console logs left in prod
-grep -rE "console\.(log|debug)" --include="*.{ts,js}" src/ 2>/dev/null | head -10
+git grep -nE "console\.(log|debug)" -- 'src/*.ts' 'src/*.tsx' 'src/*.js' 'src/*.jsx' | head -10
 
 # Hardcoded secrets pattern
-grep -irE "(api[_-]?key|secret|password)\s*=\s*['\"]" --include="*.{ts,js,py,go,env}" | head -10
+git grep -niE "(api[_-]?key|secret|password)[[:space:]]*=[[:space:]]*['\"]" -- "${SRC_FILES[@]}" '*.env' | head -10
 ```
+
+Up to v0.2 these scans used `grep --include="*.{ts,js}"`. Grep does not expand braces inside `--include`, so the patterns matched no files and every count came back zero. The file count printed first is there so that a scan which sees nothing cannot pass for a clean codebase.
 
 ### 6. State verification (new in v0.2)
 
@@ -85,11 +92,17 @@ Two checks that belong BEFORE you write anything into the repo, not after.
 **Where the version control metadata lives.** A `.git` directory inside a cloud-synced folder (Dropbox, iCloud, OneDrive, Drive) is unstable by construction: the syncer rewrites objects and refs while git is working on them.
 
 ```bash
-GITDIR="$(git rev-parse --git-dir 2>/dev/null)" && GITDIR_REAL="$(cd "$GITDIR" && pwd -P)"
-echo "$GITDIR_REAL" | grep -qiE "CloudStorage|Dropbox|iCloud|OneDrive|Google ?Drive|Box Sync" \
-  && echo "WARNING: version control metadata inside a cloud-sync root. Exclude it from sync before writing." \
-  && git fsck --connectivity-only --no-progress >/dev/null 2>&1 || echo "integrity probe failed: resolve before editing"
+GITDIR="$(git rev-parse --git-dir 2>/dev/null)" || { echo "not a git repository"; exit 1; }
+GITDIR_REAL="$(cd "$GITDIR" && pwd -P)"
+if echo "$GITDIR_REAL" | grep -qiE "CloudStorage|Dropbox|iCloud|OneDrive|Google ?Drive|Box Sync"; then
+  echo "WARNING: version control metadata inside a cloud-sync root. Exclude it from sync before writing."
+fi
+git fsck --connectivity-only --no-progress >/dev/null 2>&1 \
+  && echo "integrity probe: ok" \
+  || echo "integrity probe failed: resolve before editing"
 ```
+
+The v0.2 version of this probe chained the three commands with `&&` and `||`, so on any repository outside a cloud-sync folder it printed "integrity probe failed" without running the probe at all. The integrity check now runs everywhere, and the cloud-sync warning is a separate signal.
 
 If the probe fails, or you find an interrupted rebase or merge, the first deliverable is putting the repository back in order, not extending it (FM-26).
 

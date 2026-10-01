@@ -1,6 +1,6 @@
 # Vibecoding Skill Pack
 
-> Production-ready Claude Code skill pack for industrial-scale agentic vibecoding. Generates structured prompt sequences for AI coding assistants (Cursor, Lovable, Claude Code, Devin, Copilot Workspace), with an Anti-Pattern Registry of 26 failure modes integrated by design.
+> Production-ready Claude Code skill pack for industrial-scale agentic vibecoding. Generates structured prompt sequences for AI coding assistants (Cursor, Lovable, Claude Code, Devin, Copilot Workspace), with an Anti-Pattern Registry of 38 failure modes integrated by design.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Claude Code Skills](https://img.shields.io/badge/Claude%20Code-compatible-blue.svg)](https://docs.claude.com/en/docs/claude-code/skills)
 
@@ -21,7 +21,7 @@ vibecoding-skill-pack/
 │   │   ├── vibecoding-engineer/       # main skill, generates prompt sequences
 │   │   ├── engineering-brief/         # Mandatory upstream: tech brief before prompts
 │   │   ├── codebase-onboarding/       # Conditional: only if extending existing repo
-│   │   └── delivery-readiness-audit/  # Mandatory downstream: READY/INCOMPLETE binary verdict
+│   │   └── delivery-readiness-audit/  # Mandatory downstream: READY / CODE-COMPLETE-RUNTIME-UNVERIFIED / INCOMPLETE
 │   └── rules/
 │       ├── skill-chaining.md          # governance of skill chains (M/C/R)
 │       ├── skill-design-invariants.md # 10 invariants every skill must respect
@@ -41,8 +41,11 @@ vibecoding-skill-pack/
 ```bash
 git clone https://github.com/danilolapegna/vibecoding-skill-pack.git
 cd your-project
-cp -r vibecoding-skill-pack/.claude/ ./.claude/
+mkdir -p .claude
+cp -R ../vibecoding-skill-pack/.claude/. ./.claude/
 ```
+
+The trailing `/.` copies the contents of the pack's `.claude/` into yours. Without it, GNU `cp` (Linux, WSL, Git Bash) nests the pack in `.claude/.claude/` whenever your project already has a `.claude/` folder.
 
 That's it. Claude Code automatically discovers the skills in `.claude/skills/`. The rules in `.claude/rules/` are always-active in your project.
 
@@ -69,7 +72,7 @@ Claude Code automatically invokes `vibecoding-engineer`, which in turn chains `e
 
 ## The Failure Mode Registry (the core asset)
 
-The pack ships with a catalogue of 26 failure modes (FM-01 to FM-26) that repeat across agentic systems, in two parts. The full table is in [.claude/skills/vibecoding-engineer/SKILL.md](.claude/skills/vibecoding-engineer/SKILL.md) under "Failure Mode Registry".
+The pack ships with a catalogue of 38 failure modes (FM-01 to FM-38) that repeat across agentic systems, in three parts. The full table is in [.claude/skills/vibecoding-engineer/SKILL.md](.claude/skills/vibecoding-engineer/SKILL.md) under "Failure Mode Registry".
 
 **Part A, agentic system design (FM-01 to FM-12).** How the agent reasons, where it keeps state, what it shows the user.
 
@@ -87,6 +90,15 @@ The pack ships with a catalogue of 26 failure modes (FM-01 to FM-26) that repeat
 - **FM-20** Fake axes: a wizard offers a choice the frontend inferred and the server never declared → two-sided provenance citation, or an explicit confession
 - **FM-25** Publication inferred from the interface: a toast or a successful push read as proof of being live → verify from the served artifact, not from the UI event
 
+**Part C, verification and evidence (FM-27 to FM-38), new in v0.3.** The ways a test, a gate, a report or a status line says "true" about something that is not. Every entry is a claim that got believed without evidence: tests that agree with the code they were copied from, a plan that grades itself, a gate that only reads the diff, an empty list that was really a failed read, the model's account of what it did, an agent's account of what it changed.
+
+- **FM-27** Self-confirming tests: the expected values were read off the implementation → oracles from the requirement or from the real engine, and every test seen failing once
+- **FM-29** Diff-scoped gate, cumulative risk: old access rules and changes made outside version control are never seen → replay the full migration history, block what the candidate adds
+- **FM-30** The baseline swallows new failures: one accepted error waves through every new one → baseline entries keyed by diagnostic identity, with an expiry
+- **FM-34** Absence read as health: "nothing waiting" while the backend errors → three states (data, empty, unavailable) and monitors that check the expected work happened
+- **FM-36** Transport success read as model success: an HTTP 200 carrying an error, a list returned as a string → classify every model call at three layers
+- **FM-38** Inherited "can't": an inability claim nobody retests sends work back to the human → a real attempt, with its command and its error, before the claim
+
 The complete table maps each FM to its preventive pattern and its test gate. The discipline is binary: every shipped feature answers "which FM-XX does this prevent, which test gate covers it?". If the PR description does not answer, the merge is blocked.
 
 ## Skill chain canonical
@@ -99,7 +111,7 @@ engineering-brief (Mandatory upstream)
 vibecoding-engineer (main)
     ↓ produces deliverables/vibecoding-engineer/
 delivery-readiness-audit (Mandatory downstream)
-    ↓ binary verdict: READY or INCOMPLETE
+    ↓ verdict: READY, CODE-COMPLETE-RUNTIME-UNVERIFIED (tracked handoff) or INCOMPLETE
 ```
 
 Skip none. The chain is the spec of the workflow: each link is the dependency of the next.
