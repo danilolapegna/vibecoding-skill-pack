@@ -6,7 +6,7 @@
 
 ## Why this exists
 
-Anyone who has tried to "vibecoded" a real product with an AI coding assistant knows the failure modes: the orchestrator runs in circles collecting ideas without scope, the cache layer silently fails on writes, parallel runs corrupt state, the agent's own brand appears in its own competitive analysis, the UI exposes JSON to end users. These are not stylistic problems, they are architectural failures that repeat across projects because nobody wrote them down as preventable.
+Anyone who has tried to vibecode a real product with an AI coding assistant knows the failure modes: the orchestrator runs in circles collecting ideas without scope, the cache layer silently fails on writes, parallel runs corrupt state, the agent's own brand appears in its own competitive analysis, the UI exposes JSON to end users. These are not stylistic problems, they are architectural failures that repeat across projects because nobody wrote them down as preventable.
 
 This pack writes them down. The `vibecoding-engineer` skill at the heart of the pack generates production-ready prompt sequences for AI coding assistants, where every prompt declares which failure modes it prevents by design and which test gates verify the prevention. The result is a build flow that converges on production-quality code rather than diverging into rework loops.
 
@@ -28,7 +28,8 @@ vibecoding-skill-pack/
 │       └── mechanical-gates-over-advisory.md  # why a rule without a gate is not a rule
 ├── examples/
 │   ├── 01-orchestrator-prompt/        # full prompt example for an agentic orchestrator
-│   └── 02-feature-prompt-with-fm-coverage/  # feature prompt with FM-XX coverage
+│   ├── 02-feature-prompt-with-fm-coverage/  # feature prompt with FM-XX coverage
+│   └── 03-mechanical-verification/   # runnable code checks + browser checks
 ├── INSTALL.md                         # drop-in install instructions
 ├── LICENSE                            # MIT
 └── README.md                          # this file
@@ -69,6 +70,12 @@ my product spec and technical architecture
 ```
 
 Claude Code automatically invokes `vibecoding-engineer`, which in turn chains `engineering-brief` (Mandatory upstream) and `delivery-readiness-audit` (Mandatory downstream).
+
+## Run the checks behind the final audit
+
+The pack now includes an [executable delivery example](examples/03-mechanical-verification/README.md): inspect a Git change with [Agent Code Gates](https://github.com/danilolapegna/agent-code-gates), then open the application's routes with [Deep Smoke](https://github.com/danilolapegna/deep-smoke). It shows a debug statement blocked by the code check, a broken page caught by the browser, and a passing crawl that missed a page because its inventory was incomplete.
+
+The two programs remain standalone and optional. The audit [explains how to use their evidence](.claude/skills/delivery-readiness-audit/references/mechanical-verification.md) alongside your existing tests. Installing the skill pack installs no executables or hooks.
 
 ## The Failure Mode Registry (the core asset)
 
@@ -136,7 +143,7 @@ See [CHANGELOG.md](CHANGELOG.md). The registry is the part that grows: new entri
 
 ## Contributing
 
-Issues and pull requests welcome. The pack is intentionally small (4 skills + 3 rules + 2 examples). Keep it that way: prefer narrow scope expansions over rewrites.
+Issues and pull requests welcome. The pack is intentionally small (4 skills + 3 rules + 3 examples). Keep it that way: prefer narrow scope expansions over rewrites.
 
 If you spot a new failure mode that the registry does not cover (a real production post-mortem, not a hypothetical), open an issue with the symptom, root cause, preventive pattern, and proposed test gate. That is how FM-01 through FM-12 got documented in the first place.
 

@@ -2,6 +2,21 @@
 
 All notable changes to the vibecoding-skill-pack.
 
+## v0.4.0 (2026-10-20)
+
+### Added
+
+- An optional mechanical-verification reference, routed from `delivery-readiness-audit` and included in the default skill copy. It explains how to attach Agent Code Gates and Deep Smoke results to the existing audit without treating a tool's PASS as a release verdict.
+- A runnable three-page example with fixed tool revisions and a lockfile. Its tests exercise a healthy run, debug residue, a rendered error boundary, an omitted route and evidence made stale by a code change. Raw CLI output is retained locally.
+
+### Unchanged
+
+- Agent Code Gates and Deep Smoke remain independent programs. No code is copied from them and no executable or hook is installed by the skill copy. The four skills, three rules and three audit verdicts remain.
+
+### Fixed
+
+- The install guide now warns that copying overwrites matching files, and locates examples relative to the sibling pack checkout.
+
 ## v0.3.0 (2026-10-01)
 
 The theme of this release: a green check is a claim about the check. v0.2 was about the ways green code reaches production and does not work. Running the pack on real builds since then kept surfacing the layer underneath: tests, gates, receipts and status lines that said "true" about something that was not.

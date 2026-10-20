@@ -1,0 +1,16 @@
+{
+  "name": "vibecoding-mechanical-verification-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "demo": "node run.mjs healthy",
+    "test": "node --test integration.test.mjs pack-install.test.mjs"
+  },
+  "devDependencies": {
+    "agent-code-gates": "git+https://github.com/danilolapegna/agent-code-gates.git#d44b414ac0f53c18c1047da5854b8dbcf34bf567",
+    "deep-smoke": "git+https://github.com/danilolapegna/deep-smoke.git#d13092d98ae0870f73b237ceeefcf1d1b962ee6d",
+    "playwright": "1.64.1"
+  }
+}

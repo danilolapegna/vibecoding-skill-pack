@@ -11,7 +11,7 @@ mkdir -p .claude
 cp -R ../vibecoding-skill-pack/.claude/. ./.claude/
 ```
 
-The same command upgrades an existing install. The trailing `/.` matters: with GNU `cp` (Linux, WSL, Git Bash), `cp -r pack/.claude/ ./.claude/` nests the pack in `.claude/.claude/` when `.claude/` already exists, and the old version stays active.
+The same command upgrades an existing install **by overwriting files with matching names**. Back up local changes and resolve conflicts before copying. The trailing `/.` matters: with GNU `cp` (Linux, WSL, Git Bash), `cp -r pack/.claude/ ./.claude/` nests the pack in `.claude/.claude/` when `.claude/` already exists, and the old version stays active.
 
 Claude Code automatically discovers the skills in `.claude/skills/` and the rules in `.claude/rules/`. No further configuration needed.
 
@@ -51,7 +51,7 @@ If your project already has a skill with one of the same names:
 2. **Rename yours**: move your existing skill to a different name first
 3. **Merge**: read both SKILL.md files and consolidate manually (advanced)
 
-The pack does not auto-overwrite existing skills.
+The copy command overwrites matching paths. Resolve conflicts before running it; the pack has no installer that merges your changes.
 
 ## Project context (optional but recommended)
 
@@ -74,12 +74,15 @@ Without `context/product-spec.md`, `vibecoding-engineer` will pause and ask you 
 
 ```bash
 cd your-project
-ls vibecoding-skill-pack/examples/
+ls ../vibecoding-skill-pack/examples/
 # 01-orchestrator-prompt/
 # 02-feature-prompt-with-fm-coverage/
+# 03-mechanical-verification/
 ```
 
-Read each example's `source.md` to see what a full prompt template looks like end-to-end (with `## Anti-pattern blocked` and `## Test gate suggested` sections).
+Read the first two examples' `source.md` files to see full prompt templates (with `## Anti-pattern blocked` and `## Test gate suggested` sections).
+
+The third example has its own [README and executable tests](examples/03-mechanical-verification/README.md). Its Node dependencies are optional and local to that example. The default `.claude/` copy also includes the audit's `references/mechanical-verification.md`, so the workflow remains available in your project without installing either program or any hook.
 
 ## Uninstall
 
