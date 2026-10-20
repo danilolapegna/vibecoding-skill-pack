@@ -76,6 +76,8 @@ Mark every surface the change did not touch as N/A, with one factual reason. Do 
 
 A receipt is the stored result of a check: what ran, on which inputs (the commit and the files), when, and with what outcome. For each requirement, cite the implementation and the strongest relevant receipt.
 
+If the project needs executable checks for changed code or rendered web routes, read [Mechanical verification](references/mechanical-verification.md). It connects this audit to the optional, standalone `agent-code-gates` and `deep-smoke` programs. Reuse equivalent project checks when they already exist. Do not install tools or hooks without the project's approval, and do not treat either program's PASS as a READY verdict for the release.
+
 - Reuse a green receipt while the inputs it proved, and the check that produced it, are unchanged. Key it to what it actually observed (FM-31).
 - Documentation, receipt and planning changes do not invalidate product tests. A shared module invalidates its importers, not unrelated surfaces. A change to a test, a harness or the toolchain invalidates the receipts it produced, even when the product did not change.
 - Run only what is missing or invalidated. While the build is still moving, run the focused tests for the changed class. Before a stage or release claim, run the full applicable suite once.

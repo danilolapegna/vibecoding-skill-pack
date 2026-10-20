@@ -23,6 +23,7 @@ context/
 __pycache__/
 *.pyc
 node_modules/
+examples/03-mechanical-verification/evidence/
 
 # Internal working context, never published
 CLAUDE.md
