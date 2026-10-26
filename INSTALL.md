@@ -32,6 +32,22 @@ Should output (among others):
 - delivery-readiness-audit
 ```
 
+## Install just the skill files with the skills CLI
+
+If you want to choose a coding agent's skill directory, the open-source [skills CLI](https://github.com/vercel-labs/skills) can install the four skills directly. This route requires Node.js 22.20 or later. Run it from the project where you want to use the pack, after reviewing any existing skills with the same names: matching files can be overwritten.
+
+```bash
+DISABLE_TELEMETRY=1 npx --yes skills@1.7.4 add danilolapegna/vibecoding-skill-pack --skill '*' --agent claude-code --yes --copy
+```
+
+The command downloads the public repository from GitHub and copies the four skills into `.claude/skills/`, including the delivery audit's `references/mechanical-verification.md`. It does not install Agent Code Gates, Deep Smoke or Git hooks. The environment setting disables the CLI's anonymous install telemetry and security-audit requests for this run; it does not prevent the download from GitHub or npm.
+
+**This route does not copy the three always-on rules in `.claude/rules/`.** Use the default copy method above when you want the complete Claude Code pack, including those rules. If you keep a skills-only install, open the rules in the repository before deciding what your project still needs.
+
+For Codex, replace `--agent claude-code` with `--agent codex`; the CLI places the skill files in `.agents/skills/`. Both file-install routes were tested with CLI 1.7.4. This checks file delivery, not whether either agent follows the instructions, and does not translate Claude Code-specific conventions. The full workflow documented in this pack remains the Claude Code workflow.
+
+After installing, check that all four `SKILL.md` files and the audit reference exist. If a skill is missing, stop and read the CLI output rather than treating a successful command alone as a complete install. To remove a trial, remove only the four skill directories that this command created; keep any pre-existing files you need.
+
 ## Selective install (one skill only)
 
 If you only want `vibecoding-engineer` without the chain dependencies:
